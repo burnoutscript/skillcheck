@@ -1,14 +1,13 @@
 # skillcheck
 
-**ESLint for Agent Skills.** Lint, score and badge your `SKILL.md` files for Claude Code, Cursor, Codex, OpenCode and any agent that speaks the [Agent Skills](https://agentskills.io) format.
+A linter for Agent Skills. It scores and badges your `SKILL.md` files for Claude Code, Cursor, Codex, OpenCode and any other agent that reads the [Agent Skills](https://agentskills.io) format.
 
 [![CI](https://github.com/burnoutscript/skillcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/burnoutscript/skillcheck/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/skillcheck)](https://www.npmjs.com/package/skillcheck)
 ![zero dependencies](https://img.shields.io/badge/dependencies-0-2ea043)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ```bash
-npx skillcheck .claude/skills
+npx github:burnoutscript/skillcheck .claude/skills
 ```
 
 ```
@@ -27,50 +26,52 @@ A+ 100  skills/pdf-forms/SKILL.md  ~128 tok
 
 ## Why
 
-A skill that never triggers is dead code you can't see. Agents pick skills **only by their description**, and nothing tells you when yours is too vague, collides with another skill, links to a file that doesn't exist, or quietly burns 8,000 tokens every time it loads.
+Agents decide whether to load a skill from its description alone. When the description is vague, overlaps another skill, or the body links to a file that isn't there, the skill fails without telling anyone. A body that costs 8,000 tokens every time it loads doesn't announce itself either.
 
-skillcheck catches those before your users do:
+skillcheck looks for:
 
-- **Trigger quality:** missing "Use when...", too short, vague words, first-person phrasing.
-- **Trigger collisions:** two skills claiming the same phrase, or descriptions so similar the agent will pick the wrong one. No other linter checks this, and it's the most common bug in big skill packs.
-- **Context cost:** body size, token estimates, and the always-on cost of every description in your pack.
-- **Broken references:** dead relative links, backslash paths, references only reachable through other references.
-- **Spec compliance:** name format, reserved words, length limits, unknown frontmatter keys.
-- **Safety:** hardcoded API keys and tokens, machine-specific absolute paths.
+- weak triggers: no "Use when...", a description that's too short, vague words, first-person phrasing
+- trigger collisions, where two skills claim the same phrase or have descriptions so close that the agent can pick the wrong one. This is the most common bug I've seen in large skill packs, and I haven't found another linter that checks it.
+- context cost: body length, token estimates, and how many tokens every description in the pack keeps in context
+- broken references: dead relative links, backslash paths, reference files that can only be reached through another reference
+- spec problems: name format, reserved words, length limits, frontmatter keys agents ignore
+- leaks: hardcoded API keys and tokens, paths that only exist on your machine
 
-Zero dependencies. Runs anywhere Node 18+ runs.
+It has no dependencies and runs on Node 18 or newer.
 
-## Real-world results
+## Results on popular repos
 
-We ran skillcheck on two of the most popular skill repos. Both are excellent, and even they have things to fix:
+I ran it on two of the most-starred skill repos. Both are good, and both still have things to fix:
 
 | Repo | Skills | Score | Highlights |
 |---|---:|---:|---|
-| [anthropics/skills](https://github.com/anthropics/skills) | 20 | 95 A | a description over the 1,024-char limit, a name containing a reserved word, 3 bodies over 5k tokens |
-| [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) | 52 | 97 A+ | 9 trigger collisions, like `"ambassador program"` claimed by two skills, and 13 references only reachable through other references |
+| [anthropics/skills](https://github.com/anthropics/skills) | 20 | 95 A | one description over the 1,024-character limit, one name with a reserved word, three bodies over 5k tokens |
+| [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) | 52 | 97 A+ | 9 trigger collisions (two skills both claim `"ambassador program"`, for one), and 13 reference files reachable only through other references |
 | [burnoutscript/sales-skills](https://github.com/burnoutscript/sales-skills) | 16 | 100 A+ | linted with skillcheck in CI |
 
-*Scores from October 2026. Run it yourself, the numbers will change as those repos improve.*
+These scores are from October 2026 and will change as those repos improve.
 
 ## Usage
 
 ```bash
-npx skillcheck                       # lint every SKILL.md under the current directory
-npx skillcheck skills/cold-email     # one skill
-npx skillcheck . --min-score 90      # fail below 90
-npx skillcheck . --strict            # fail on warnings too
-npx skillcheck . --ignore body/no-examples,links/nested
-npx skillcheck . --format json       # json | markdown | github | pretty
-npx skillcheck . --badge skillcheck.svg
-npx skillcheck . --badge-url         # prints a shields.io badge for your README
-npx skillcheck --rules               # list every rule
+npx github:burnoutscript/skillcheck                       # every SKILL.md under the current directory
+npx github:burnoutscript/skillcheck skills/cold-email     # one skill
+npx github:burnoutscript/skillcheck . --min-score 90      # fail below 90
+npx github:burnoutscript/skillcheck . --strict            # fail on warnings too
+npx github:burnoutscript/skillcheck . --ignore body/no-examples,links/nested
+npx github:burnoutscript/skillcheck . --format json       # json | markdown | github | pretty
+npx github:burnoutscript/skillcheck . --badge skillcheck.svg
+npx github:burnoutscript/skillcheck . --badge-url         # prints a shields.io badge for your README
+npx github:burnoutscript/skillcheck --rules               # list every rule
 ```
 
-Exit codes: `0` passed, `1` errors found (or below `--min-score`), `2` bad usage.
+To get a plain `skillcheck` command, install it once with `npm i -g github:burnoutscript/skillcheck`.
+
+Exit code `0` means it passed, `1` means errors were found or the score is below `--min-score`, and `2` means bad usage.
 
 ### Config
 
-Drop a `.skillcheckrc.json` in your repo root:
+Put a `.skillcheckrc.json` in your repo root:
 
 ```json
 {
@@ -82,7 +83,7 @@ Drop a `.skillcheckrc.json` in your repo root:
 
 ### GitHub Action
 
-Findings show up as inline annotations on the PR, and a score table lands in the job summary.
+Findings show up as annotations on the PR diff, and a score table goes into the job summary.
 
 ```yaml
 # .github/workflows/skills.yml
@@ -102,13 +103,17 @@ jobs:
 ### Badge
 
 ```bash
-npx skillcheck skills --badge-url
+npx github:burnoutscript/skillcheck skills --badge-url
 # ![skillcheck](https://img.shields.io/badge/skillcheck-100%2F100-2ea043)
 ```
 
 ![skillcheck](https://img.shields.io/badge/skillcheck-100%2F100-2ea043)
 
 ### As a library
+
+```bash
+npm i github:burnoutscript/skillcheck
+```
 
 ```js
 import { lint } from 'skillcheck';
@@ -124,25 +129,25 @@ for (const r of report.results) console.log(r.name, r.findings);
 |---|---|---|
 | `frontmatter/missing` | error · fatal | No `---` YAML block, so the skill can't load |
 | `frontmatter/invalid` | error | YAML the agent can't parse |
-| `frontmatter/unknown-key` | info | Keys outside the spec that agents ignore |
+| `frontmatter/unknown-key` | info | Keys outside the spec, which agents ignore |
 | `name/missing` | error · fatal | No `name` |
-| `name/format` | error | Not kebab-case, or over 64 chars |
+| `name/format` | error | Not kebab-case, or longer than 64 characters |
 | `name/reserved` | error | Contains `claude` or `anthropic` |
 | `name/dir-mismatch` | warn | Name differs from its folder |
-| `description/missing` | error · fatal | No description, so it never triggers |
-| `description/too-long` | error | Over 1,024 chars |
-| `description/too-short` | warn | Under 60 chars |
-| `description/no-trigger` | warn | Says what, not when ("Use when the user...") |
-| `description/person` | warn | "I can..." / "You can..." instead of third person |
+| `description/missing` | error · fatal | No description, so the skill never triggers |
+| `description/too-long` | error | Over 1,024 characters |
+| `description/too-short` | warn | Under 60 characters |
+| `description/no-trigger` | warn | Says what the skill does but not when to use it ("Use when the user...") |
+| `description/person` | warn | "I can..." or "You can..." instead of third person |
 | `description/vague` | info | "helps with", "various", "etc." |
 | `body/empty` | error | No instructions |
 | `body/too-long` | warn | Over 500 lines |
-| `body/token-heavy` | warn | Over ~5,000 tokens |
+| `body/token-heavy` | warn | Over about 5,000 tokens |
 | `body/no-structure` | info | Long body with no headings |
 | `body/no-examples` | info | No example anywhere |
-| `body/time-sensitive` | info | "as of March 2025" and friends go stale |
+| `body/time-sensitive` | info | Phrases like "as of March 2025" that go stale |
 | `links/broken` | error | Relative link to a missing file |
-| `links/nested` | info | A file only reachable through another reference |
+| `links/nested` | info | A file that can only be reached through another reference |
 | `paths/absolute` | warn | `C:\Users\...`, `/home/...` |
 | `paths/backslash` | warn | `..\file.md` breaks on macOS and Linux |
 | `security/secret` | error · fatal | API keys, tokens, private keys |
@@ -151,13 +156,13 @@ for (const r of report.results) console.log(r.name, r.findings);
 
 ### Scoring
 
-Each skill starts at 100: **-15** per error, **-6** per warning, **-2** per info (info is capped at -10 so nitpicks can't sink a good skill). Fatal findings cap the score at 30, because a skill that can't load or leaks a key is broken no matter what else is right. The pack score is the average.
+Each skill starts at 100 and loses 15 per error, 6 per warning and 2 per info finding. Info findings can take off at most 10 points in total, so nitpicks can't sink a good skill. A fatal finding caps the score at 30, because a skill that can't load or that leaks a key is broken whatever else it gets right. The pack score is the average.
 
 | Grade | A+ | A | B | C | D | F |
 |---|---|---|---|---|---|---|
 | Score | 97+ | 90+ | 80+ | 70+ | 60+ | <60 |
 
-Limits follow the [Agent Skills spec](https://agentskills.io) and Anthropic's [skill authoring best practices](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices).
+The limits come from the [Agent Skills spec](https://agentskills.io) and Anthropic's [skill authoring best practices](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices).
 
 ## Roadmap
 
@@ -168,7 +173,7 @@ Limits follow the [Agent Skills spec](https://agentskills.io) and Anthropic's [s
 
 ## Contributing
 
-Issues and PRs welcome. New rules need a fixture in `test/fixtures` and a test. Run `npm test` before sending.
+Issues and PRs are welcome. A new rule needs a fixture in `test/fixtures` and a test. Run `npm test` before you send it.
 
 ## License
 
