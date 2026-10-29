@@ -1,0 +1,47 @@
+{
+  "name": "skillcheck",
+  "version": "0.1.0",
+  "description": "Lint, score and badge your Agent Skills (SKILL.md) for Claude Code, Cursor, Codex and friends. Catches weak triggers, broken links, token bloat and trigger collisions.",
+  "type": "module",
+  "bin": {
+    "skillcheck": "bin/skillcheck.js"
+  },
+  "main": "src/index.js",
+  "exports": "./src/index.js",
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/skillcheck.test.js",
+    "lint:self": "node bin/skillcheck.js test/fixtures/good"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "agent-skills",
+    "skills",
+    "claude",
+    "claude-code",
+    "cursor",
+    "codex",
+    "lint",
+    "linter",
+    "skill-md",
+    "llm",
+    "ai-agents"
+  ],
+  "author": "Victor Candido",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/burnoutscript/skillcheck.git"
+  },
+  "bugs": {
+    "url": "https://github.com/burnoutscript/skillcheck/issues"
+  },
+  "homepage": "https://github.com/burnoutscript/skillcheck#readme"
+}

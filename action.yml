@@ -1,0 +1,48 @@
+name: skillcheck
+description: Lint and score Agent Skills (SKILL.md) with inline PR annotations
+author: Victor Candido
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  path:
+    description: Directory or files to lint
+    default: .
+  min-score:
+    description: Fail if the overall score is below this
+    default: '0'
+  strict:
+    description: Fail on warnings too
+    default: 'false'
+  ignore:
+    description: Comma-separated rule ids to skip
+    default: ''
+
+outputs:
+  score:
+    description: Overall score (0-100)
+    value: ${{ steps.run.outputs.score }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - id: run
+      shell: bash
+      env:
+        SC_PATH: ${{ inputs.path }}
+        SC_MIN: ${{ inputs.min-score }}
+        SC_STRICT: ${{ inputs.strict }}
+        SC_IGNORE: ${{ inputs.ignore }}
+      run: |
+        args=("$SC_PATH" --min-score "$SC_MIN" --format github)
+        [ "$SC_STRICT" = "true" ] && args+=(--strict)
+        [ -n "$SC_IGNORE" ] && args+=(--ignore "$SC_IGNORE")
+        node "$GITHUB_ACTION_PATH/bin/skillcheck.js" "${args[@]}" | tee skillcheck.out
+        status=${PIPESTATUS[0]}
+        node "$GITHUB_ACTION_PATH/bin/skillcheck.js" "$SC_PATH" --format markdown >> "$GITHUB_STEP_SUMMARY" || true
+        echo "score=$(sed -n 's/^skillcheck score: \([0-9]*\).*/\1/p' skillcheck.out)" >> "$GITHUB_OUTPUT"
+        exit $status
